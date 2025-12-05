@@ -30,7 +30,7 @@ public class VideoController {
     @GetMapping("")
     public String list(Model model) {
         model.addAttribute("videos", videoService.findAll());
-        return "admin/videos/list";
+        return "video-ajax";
     }
 
     @GetMapping("/add")

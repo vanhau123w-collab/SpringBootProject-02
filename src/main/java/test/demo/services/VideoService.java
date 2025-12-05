@@ -1,19 +1,39 @@
 package test.demo.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import test.demo.entity.Video;
-import test.demo.repository.VideoRepository;
 import java.util.List;
 import java.util.Optional;
 
-@Service
-public class VideoService { // Có thể viết thẳng class không cần interface để tiết kiệm thời gian
-    @Autowired VideoRepository videoRepo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
-    public List<Video> findAll() { return videoRepo.findAll(); }
-    public Optional<Video> findById(String id) { return videoRepo.findById(id); }
-    public Video save(Video video) { return videoRepo.save(video); }
-    public void deleteById(String id) { videoRepo.deleteById(id); }
-    public List<Video> findByTitle(String keyword) { return videoRepo.findByTitleContaining(keyword); }
+import test.demo.entity.Video;
+import test.demo.repository.VideoRepository;
+
+@Service
+public class VideoService {
+
+    @Autowired
+    private VideoRepository videoRepository;
+
+    public void save(Video video) {
+        videoRepository.save(video);
+    }
+
+    public void deleteById(String id) {
+        videoRepository.deleteById(id);
+    }
+
+    public Optional<Video> findById(String id) {
+        return videoRepository.findById(id);
+    }
+
+    public List<Video> findAll() {
+        return videoRepository.findAll();
+    }
+
+    public Page<Video> findByTitleContaining(String title, Pageable pageable) {
+        return videoRepository.findByTitleContaining(title, pageable);
+    }
 }

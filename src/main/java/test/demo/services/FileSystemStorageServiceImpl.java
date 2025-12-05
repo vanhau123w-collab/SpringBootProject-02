@@ -1,5 +1,6 @@
 package test.demo.services;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,43 +13,49 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import test.demo.config.StorageProperties;
-
 @Service
 public class FileSystemStorageServiceImpl implements IStorageService {
-    private final Path rootLocation;
+
+    // 1. Đặt cứng tên thư mục là "uploads" để tránh lỗi cấu hình
+    private final Path rootLocation = Paths.get("uploads");
+
+    // 2. Constructor: Tự động tạo thư mục ngay khi khởi động
+    public FileSystemStorageServiceImpl() {
+        try {
+            Files.createDirectories(rootLocation);
+        } catch (IOException e) {
+            throw new RuntimeException("Không thể khởi tạo thư mục lưu trữ!", e);
+        }
+    }
 
     @Override
     public String getStorageFilename(MultipartFile file, String id) {
+        // Lấy đuôi file (ví dụ .jpg)
         String ext = FilenameUtils.getExtension(file.getOriginalFilename());
         return "p" + id + "." + ext;
     }
 
-    public FileSystemStorageServiceImpl(StorageProperties properties) {
-        if (properties.getLocation().trim().length() == 0) {
-            throw new RuntimeException("File upload location can not be empty.");
-        }
-        this.rootLocation = Paths.get(properties.getLocation());
-    }
-
     @Override
-    public void store(MultipartFile file, String storeFilename) {
+    public void store(MultipartFile file, String storedFilename) {
         try {
             if (file.isEmpty()) {
-                throw new RuntimeException("Failed to store empty file");
+                throw new RuntimeException("File rỗng!");
             }
-            Path destinationFile = this.rootLocation.resolve(Paths.get(storeFilename))
+            
+            // Đường dẫn đích
+            Path destinationFile = this.rootLocation.resolve(Paths.get(storedFilename))
                     .normalize().toAbsolutePath();
-            if (!destinationFile.getParent().equals(this.rootLocation.toAbsolutePath())) {
-                throw new RuntimeException("Cannot store file outside current directory");
-            }
+            
+            // Copy file vào thư mục uploads
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to store file: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi khi lưu file: " + e.getMessage(), e);
         }
     }
+
+    // --- Các hàm dưới giữ nguyên để tuân thủ Interface ---
 
     @Override
     public Resource loadAsResource(String filename) {
@@ -70,17 +77,13 @@ public class FileSystemStorageServiceImpl implements IStorageService {
     }
 
     @Override
-    public void delete(String storeFilename) throws Exception {
-        Path destinationFile = rootLocation.resolve(Paths.get(storeFilename)).normalize().toAbsolutePath();
-        Files.delete(destinationFile);
+    public void delete(String storedFilename) throws Exception {
+        Path destinationFile = rootLocation.resolve(Paths.get(storedFilename)).normalize().toAbsolutePath();
+        Files.deleteIfExists(destinationFile);
     }
 
     @Override
     public void init() {
-        try {
-            Files.createDirectories(rootLocation);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not initialize storage", e);
-        }
+        // Đã gọi trong Constructor rồi nên hàm này để trống cũng được
     }
 }
