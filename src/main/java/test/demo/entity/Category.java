@@ -2,7 +2,9 @@ package test.demo.entity;
 
 import java.io.Serializable;
 import java.util.List;
+
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore; // <--- 1. Thêm dòng này
 
 @Entity
 @Table(name="categories")
@@ -24,6 +26,8 @@ public class Category implements Serializable {
     private int status;
 
     // Mapping ngược lại Video (Một Category có nhiều Video)
+    // 2. Thêm @JsonIgnore để ngắt vòng lặp vô tận khi load API
+    @JsonIgnore 
     @OneToMany(mappedBy = "category")
     private List<Video> videos;
 
@@ -31,7 +35,7 @@ public class Category implements Serializable {
     public Category() {
     }
 
-    // --- GETTERS VÀ SETTERS THỦ CÔNG (Bắt buộc) ---
+    // --- GETTERS VÀ SETTERS THỦ CÔNG ---
     public int getId() {
         return id;
     }
@@ -71,6 +75,7 @@ public class Category implements Serializable {
     public void setVideos(List<Video> videos) {
         this.videos = videos;
     }
+
     @ManyToOne
     @JoinColumn(name = "username")
     private User user;
